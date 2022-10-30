@@ -1,12 +1,12 @@
-#!/usr/bin/env python3
 import hashlib
-from gpiozero import LED
+#from gpiozero import LED
 print("\n")
 
 def get_usr(cleartext_usrname):
     global hashed_usrname 
     hashed_usrname = hashlib.sha256(cleartext_usrname.encode()).hexdigest()
-    print(hashed_usrname)
+    return hashed_usrname
+    # print(hashed_usrname)
 
 def get_passwd(cleartext_passwd):
     global hashed_passwd
@@ -18,8 +18,8 @@ if __name__ == "__main__":
     fuckups = 0
     hashed_passwd = ""
     hashed_passwd = ""
-    while True:
-        
+
+    while True:    
         get_usr(input("Please enter your username\n"))
         # compare username to db
         # if username correct:
