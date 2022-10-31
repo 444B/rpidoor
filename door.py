@@ -1,7 +1,6 @@
-import time
 import hashlib
 import sqlalchemy as db
-from random import randint
+from time import sleep 
 #from gpiozero import LED
 print("\n")
 
@@ -9,17 +8,17 @@ print("\n")
 def get_usrname(cleartext_usrname):
     global hashed_usrname 
     hashed_usrname = hashlib.sha256(cleartext_usrname.encode()).hexdigest()
-    # print(hashed_usrname)
+    print(hashed_usrname)
 
 # get passwd and save as a global string(hashed)
 def get_passwd(cleartext_passwd):
     global hashed_passwd
     hashed_passwd = hashlib.sha256(cleartext_passwd.encode()).hexdigest()
-    # print(hashed_passwd)
+    print(hashed_passwd)
 
 # insert new member (still in testing)
-def insert():
-    query = db.insert(Users).values(usrname=randint(1000, 9999), passwd=123456)
+def insert(hashed_usrname, hashed_passwd):
+    query = db.insert(Users).values(usrname=hashed_usrname, passwd=hashed_passwd)
     result = conn.execute(query)
     if result.is_insert:
         print(f"inserted")
@@ -28,8 +27,8 @@ def insert():
         return
 
 # check if the usrname is in the db
-def query(uname: int):
-    output = conn.execute(f"SELECT * FROM members WHERE usrname = {uname}")
+def query_creds(hash, type):
+    output = conn.execute(f"SELECT * FROM members WHERE {type}= {hash}")
     print(output.fetchall())
 
 # function to open the door. in testing, just prints 
@@ -42,7 +41,7 @@ def open_door():
 # whole loop is 1s
 def flash_led(time):
     for num in range(time):
-        print("flashing LED " + str(time) + " times")
+        print("flashing LED " + str(time) + " times, pulse "+ str(num))
         # usrname_led.on()
         # passwd_led.on()
         # sleep(0.5)
@@ -50,15 +49,12 @@ def flash_led(time):
         # passwd_led.off()
         # sleep(0.5)
 
-
-
-
 # main program runs from hhere
 if __name__ == "__main__":
     
     # initial variables setup
     fuckups = 0
-    hashed_passwd = ""
+    hashed_usrname= ""
     hashed_passwd = ""
     
     # LED types 
@@ -69,7 +65,6 @@ if __name__ == "__main__":
     engine = db.create_engine("sqlite:///creds.db")
     conn = engine.connect()
     metadata = db.MetaData()
-    
     # tables setup
     Users = db.Table('members', metadata,
                 db.Column('usrname', db.CHAR(64),primary_key=True),
@@ -94,24 +89,23 @@ if __name__ == "__main__":
             print("Incorrect user, try again")
             fuckups += 1
             flash_led(1)
-            
 
         # compare passwd to creds.db TODO
             get_passwd(input("What is your passwrd?\n"))
 
 
         if hashed_passwd == "correct": 
-            passwd_led.on()
+            # passwd_led.on()
             open_door()
+
         if fuckups == 3:
             print("Too many incorrect attempts, pls wait 30s and try again")
-            flash_led(5) 
+            flash_led(30) 
             sleep(30)
-        # else:
-        #   print("Incorrect user, try again")
-        #   global fuckups += 1
-        #   light up user LED RED
-        
-    # insert()
-    # query(8645)
+        else:
+           print("Incorrect user, try again")
+           fuckups += 1
+           flash_led(1)
+            
+        insert(hashed_usrname, hashed_passwd)
 
