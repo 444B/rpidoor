@@ -1,6 +1,6 @@
 import hashlib
-import sqlalchemy as db
 from time import sleep 
+from db.py import db_query
 #from gpiozero import LED
 print("\n")
 
@@ -16,20 +16,6 @@ def get_passwd(cleartext_passwd):
     hashed_passwd = hashlib.sha256(cleartext_passwd.encode()).hexdigest()
     print(hashed_passwd)
 
-# insert new member (still in testing)
-def insert(hashed_usrname, hashed_passwd):
-    query = db.insert(Users).values(usrname=hashed_usrname, passwd=hashed_passwd)
-    result = conn.execute(query)
-    if result.is_insert:
-        print(f"inserted")
-    else:
-        print("not inserted.")
-        return
-
-# check if the usrname is in the db
-def query_creds(hash, type):
-    output = conn.execute(f"SELECT * FROM members WHERE {type}= {hash}")
-    print(output.fetchall())
 
 # function to open the door. in testing, just prints 
 def open_door():
@@ -56,21 +42,6 @@ if __name__ == "__main__":
     fuckups = 0
     hashed_usrname= ""
     hashed_passwd = ""
-    
-    # LED types 
-    # usrname_led = LED(17)
-    # passwd_led = LED(21)
-    
-    # db setup
-    engine = db.create_engine("sqlite:///creds.db")
-    conn = engine.connect()
-    metadata = db.MetaData()
-    # tables setup
-    Users = db.Table('members', metadata,
-                db.Column('usrname', db.CHAR(64),primary_key=True),
-                db.Column('passwd', db.CHAR(64), nullable=False),
-              )
-    metadata.create_all(engine)
 
     # running program in a loop
     while True:
@@ -81,6 +52,7 @@ if __name__ == "__main__":
             open_door()
 
         # compare usrname to creds.db TODO
+        db_query()
         if hashed_usrname == "correct":
             print("turn LED on")
             # usrname_led.on()
@@ -92,6 +64,7 @@ if __name__ == "__main__":
 
         # compare passwd to creds.db TODO
             get_passwd(input("What is your passwrd?\n"))
+            db_query(hashed_passwd, hashed_passwd)
 
 
         if hashed_passwd == "correct": 
@@ -106,6 +79,5 @@ if __name__ == "__main__":
            print("Incorrect user, try again")
            fuckups += 1
            flash_led(1)
-            
-        insert(hashed_usrname, hashed_passwd)
+        
 
