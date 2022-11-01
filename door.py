@@ -1,33 +1,39 @@
 import hashlib
-from time import sleep 
-from db.py import db_query
-#from gpiozero import LED
+from time import sleep
+from db import db_query
+# from gpiozero import LED
+
 print("\n")
+
 
 # get usrname and save as a global string(hashed)
 def get_usrname(cleartext_usrname):
-    global hashed_usrname 
+    global hashed_usrname
     hashed_usrname = hashlib.sha256(cleartext_usrname.encode()).hexdigest()
-    print(hashed_usrname)
+    return hashed_usrname
+
 
 # get passwd and save as a global string(hashed)
 def get_passwd(cleartext_passwd):
     global hashed_passwd
     hashed_passwd = hashlib.sha256(cleartext_passwd.encode()).hexdigest()
-    print(hashed_passwd)
+    return hashed_passwd
 
 
-# function to open the door. in testing, just prints 
-def open_door():
-    print("the door is OPEN\n")
-    print("sleep 15 seconds")
-    # usrname_led.off()
-    # passwd_led.off()
+# function to open the door. in testing, just prints
+def open_sesame():
+    if usrname_check and passwd_check:
+        print("the door is OPEN\n")
+        print("sleep 15 seconds")
+        # usrname_led.off()
+        # passwd_led.off()
 
-# whole loop is 1s
-def flash_led(time):
+
+# flashes both LEDs
+def flash_both_led(time):
     for num in range(time):
-        print("flashing LED " + str(time) + " times, pulse "+ str(num))
+        print("flashing LED " + str(time) + " times, pulse " + str(num + 1))
+        sleep(1)
         # usrname_led.on()
         # passwd_led.on()
         # sleep(0.5)
@@ -35,132 +41,96 @@ def flash_led(time):
         # passwd_led.off()
         # sleep(0.5)
 
-# main program runs from hhere
+
+# TODO figure out how to add color to this logic
+# def change_led(category, action):
+#     if category == usrname_led:
+#         if action == 1:
+#             usrname_led.on()
+#         if action == 0:
+#             usrname_led.off()
+#     if category == passwd_led:
+#         if action == 1:
+#             passwd_led.on()
+#         if action == 0:
+#             passwd_led.off()
+
+
+# main program runs from here
 if __name__ == "__main__":
-    
+
     # initial variables setup
     fuckups = 0
-    hashed_usrname= ""
+    hashed_usrname = ""
     hashed_passwd = ""
+    usrname_check = False
+    passwd_check = False
+    # usrname_led = LED(11)
+    # passwd_led = LED(18)
+    # change_led(usrname_led, 0)
+    # change_led(passwd_led, 0)
 
     # running program in a loop
     while True:
-        get_usrname(input("Please enter your usrname\n"))
 
-        # admin override using magic hash
-        if hashed_usrname  == "936867247aef14d232e539bd3f08b2c6bc47afe56a774ede3488d66006cbeb95":
-            open_door()
+        # usrname check loop
+        while not usrname_check:
+            get_usrname(input("Please enter your usrname\n"))
 
-        # compare usrname to creds.db TODO
-        db_query()
-        if db_query 
-            print("turn LED on")
-            # usrname_led.on()
+            # admin override using magic hash_data
+            if hashed_usrname == "7485f7f14090849ddbece011de103c40eadcdc0031885dc29f899f3c5a727428":
+                # change_led(usrname_led, 1)
+                fuckups = 0
+                usrname_check = True
 
-        else:
-            print("Incorrect user, try again")
-            fuckups += 1
-            flash_led(1)
+            # compare usrname to creds.db
+            if db_query(hashed_usrname, "queried_usrname"):
+                # change_led(usrname_led, 1)
+                fuckups = 0
+                usrname_check = True
 
-        # compare passwd to creds.db TODO
-            get_passwd(input("What is your passwrd?\n"))
-            db_query(hashed_passwd, hashed_passwd)
+            # incorrect input
+            if not db_query(hashed_usrname, "queried_usrname"):
+                fuckups += 1
+                print(f"Incorrect user, try again.You have {3 - fuckups} attempts left")
+                flash_both_led(1)
 
+            # timeout after 3 incorrect input
+            if fuckups > 2:
+                print("Too many incorrect attempts, pls wait 30s and try again")
+                flash_both_led(30)
+                # sleep(30)
+                fuckups = 0
 
-        if hashed_passwd == "correct": 
-            # passwd_led.on()
-            open_door()
+        # passwrd check loop
+        while not passwd_check:
+            get_passwd(input("Please enter your passwd\n"))
 
-        if fuckups == 3:
-            print("Too many incorrect attempts, pls wait 30s and try again")
-            flash_led(30) 
-            sleep(30)
-        else:
-           print("Incorrect user, try again")
-           fuckups += 1
-           flash_led(1)
-        
+            # admin override using magic hash_data
+            if hashed_passwd == "936867247aef14d232e539bd3f08b2c6bc47afe56a774ede3488d66006cbeb95":
+                # change_led(passwd_led, 1)
+                passwd_check = True
 
-import hashlib
-from time import sleep 
-from db.py import db_query
-#from gpiozero import LED
-print("\n")
+            # compare usrname to creds.db
+            if db_query(hashed_passwd, "queried_passwd"):
+                # change_led(passwd_led, 1)
+                passwd_check = True
 
-# get usrname and save as a global string(hashed)
-def get_usrname(cleartext_usrname):
-    global hashed_usrname 
-    hashed_usrname = hashlib.sha256(cleartext_usrname.encode()).hexdigest()
-    print(hashed_usrname)
+            # incorrect input
+            if not db_query(hashed_passwd, "queried_passwd"):
+                fuckups += 1
+                print(f"Incorrect passwd, try again.You have {3 - fuckups} attempts left")
+                flash_both_led(1)
 
-# get passwd and save as a global string(hashed)
-def get_passwd(cleartext_passwd):
-    global hashed_passwd
-    hashed_passwd = hashlib.sha256(cleartext_passwd.encode()).hexdigest()
-    print(hashed_passwd)
+            # timeout after 3 incorrect input
+            if fuckups > 2:
+                print("Too many incorrect attempts, pls wait 30s and try again")
+                flash_both_led(30)
+                fuckups = 0
+                usrname_check = False
 
+        # opens the door. TODO Need to write protective logic around this function
+        if usrname_check and passwd_check:
+            open_sesame()
 
-# function to open the door. in testing, just prints 
-def open_door():
-    print("the door is OPEN\n")
-    print("sleep 15 seconds")
-    # usrname_led.off()
-    # passwd_led.off()
-
-# whole loop is 1s
-def flash_led(time):
-    for num in range(time):
-        print("flashing LED " + str(time) + " times, pulse "+ str(num))
-        # usrname_led.on()
-        # passwd_led.on()
-        # sleep(0.5)
-        # usrname_led.off()
-        # passwd_led.off()
-        # sleep(0.5)
-
-# main program runs from hhere
-if __name__ == "__main__":
-    
-    # initial variables setup
-    fuckups = 0
-    hashed_usrname= ""
-    hashed_passwd = ""
-
-    # running program in a loop
-    while True:
-        get_usrname(input("Please enter your usrname\n"))
-
-        # admin override using magic hash
-        if hashed_usrname  == "936867247aef14d232e539bd3f08b2c6bc47afe56a774ede3488d66006cbeb95":
-            open_door()
-
-        # compare usrname to creds.db TODO
-        db_query()
-        if hashed_usrname == "correct":
-            print("turn LED on")
-            # usrname_led.on()
-
-        else:
-            print("Incorrect user, try again")
-            fuckups += 1
-            flash_led(1)
-
-        # compare passwd to creds.db TODO
-            get_passwd(input("What is your passwrd?\n"))
-            db_query(hashed_passwd, hashed_passwd)
-
-
-        if hashed_passwd == "correct": 
-            # passwd_led.on()
-            open_door()
-
-        if fuckups == 3:
-            print("Too many incorrect attempts, pls wait 30s and try again")
-            flash_led(30) 
-            sleep(30)
-        else:
-           print("Incorrect user, try again")
-           fuckups += 1
-           flash_led(1)
-        
-
+            # TODO - write a function in db.py that checks that the usrname and passwd match each other
