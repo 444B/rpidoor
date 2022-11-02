@@ -8,11 +8,11 @@ Once we have a working model, dev will move to a dev branch and this md will be 
 ## Setup
 Copy this command and paste into terminal. It will change your directory to your home directory, clone the repo, change directory to the repo, give the bash script execution permisson and then run the script. Read the [run.sh](https://github.com/444B/rpidoor/blob/master/run.sh) script for more info. Always read what you run :) 
 ``` shell
-cd ~ \  
- git clone https://github.com/444B/rpidoor.git\  
- cd rpidoor/\  
- chmod u+x run.sh\  
- ./run.sh\  
+cd ~
+ git clone https://www.github.com/444B/rpidoor.git
+ cd rpidoor/
+ chmod u+x run.sh
+ sudo ./run.sh
 ```
 
 ## Physical layout
