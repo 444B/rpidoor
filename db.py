@@ -38,7 +38,7 @@ def db_query(hash_data, category):
         else:
             return False
 
-    if category == "queried_passwd":
+    elif category == "queried_passwd":
         output = conn.execute(
             f"SELECT EXISTS(SELECT 1 FROM members WHERE passwd_col = ? LIMIT 1)", (hash_data,)
         )
@@ -49,6 +49,25 @@ def db_query(hash_data, category):
             return False
     else:
         print("Malformed Query category error")
+        return False
+
+
+def db_query_match(hash_data_1, hash_data_2, category):
+    if category == "queried_username_password":
+        # Check that the password and the username are from the same user
+        output = conn.execute(
+            f"SELECT EXISTS(SELECT 1 FROM members WHERE passwd_col = ? AND usrname_col = ? LIMIT 1)", (hash_data_1, hash_data_2)
+        )
+        result = output.fetchall()
+        if result[0][0] == 1:
+            return True
+        else:
+            return False
+    else:
+        print("Malformed Query category error")
+        return False
+    
+
 
 
 # if __name__ == '__main__':
