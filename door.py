@@ -1,7 +1,8 @@
 import hashlib
 from time import sleep
-from db import db_query
 from gpiozero import LED
+from db import db_query, db_query_match
+
 
 print("\n")
 
@@ -22,15 +23,16 @@ def get_passwd(cleartext_passwd):
 
 # function to open the door. in testing, just prints
 def open_sesame():
-    if usrname_check and passwd_check:
-        usrname_led.on()
-        passwd_led.on()
-        print("Door has been opened")
-        sleep(5)
-        usrname_led.off()
-        passwd_led.off()
-        print("Door has been closed")
-        return
+    usrname_led.on()
+    passwd_led.on()
+    print("Door has been opened")
+    return
+
+def close_sesame():
+    print("Door has been closed")
+    usrname_led.off()
+    passwd_led.off()
+    return
 
 
 # flashes both LEDs
@@ -68,6 +70,7 @@ if __name__ == "__main__":
     hashed_passwd = ""
     usrname_check = False
     passwd_check = False
+    match_check = False
     usrname_led = LED(12)
     passwd_led = LED(5)
     change_led(usrname_led, 0)
@@ -93,10 +96,11 @@ if __name__ == "__main__":
                 usrname_check = True
 
             # incorrect input
-            if not db_query(hashed_usrname, "queried_usrname"):
+            else:
                 fuckups += 1
                 print(f"Incorrect user, try again.You have {3 - fuckups} attempts left")
                 flash_both_led(1)
+                usrname_check = False
 
             # timeout after 3 incorrect input
             if fuckups > 2:
@@ -120,10 +124,12 @@ if __name__ == "__main__":
                 passwd_check = True
 
             # incorrect input
-            if not db_query(hashed_passwd, "queried_passwd"):
+            else:
                 fuckups += 1
                 print(f"Incorrect passwd, try again.You have {3 - fuckups} attempts left")
                 flash_both_led(1)
+                passwd_check = False
+                usrname_check = False
 
             # timeout after 3 incorrect input
             if fuckups > 2:
@@ -132,10 +138,20 @@ if __name__ == "__main__":
                 fuckups = 0
                 usrname_check = False
 
+            # check that usrname and passwd match
+            if db_query_match(hashed_usrname, hashed_passwd):
+                match_check = True
+            else:
+                print("Username and password do not match")
+                passwd_check = False
+                fuckups += 1
+
         # opens the door. TODO Need to write protective logic around this function
-        if usrname_check and passwd_check:
+        if usrname_check and passwd_check and match_check:
             open_sesame()
-            break
-
-            # TODO - write a function in db.py that checks that the usrname and passwd match each other
-
+            sleep(5)
+            close_sesame()
+            usrname_check = False
+            passwd_check = False
+            match_check = False
+            fuckups = 0
