@@ -23,15 +23,16 @@ def get_passwd(cleartext_passwd):
 
 # function to open the door. in testing, just prints
 def open_sesame():
-    if usrname_check and passwd_check:
-        usrname_led.on()
-        passwd_led.on()
-        print("Door has been opened")
-        sleep(5)
-        usrname_led.off()
-        passwd_led.off()
-        print("Door has been closed")
-        return
+    usrname_led.on()
+    passwd_led.on()
+    print("Door has been opened")
+    return
+
+def close_sesame():
+    print("Door has been closed")
+    usrname_led.off()
+    passwd_led.off()
+    return
 
 
 # flashes both LEDs
@@ -99,6 +100,7 @@ if __name__ == "__main__":
                 fuckups += 1
                 print(f"Incorrect user, try again.You have {3 - fuckups} attempts left")
                 flash_both_led(1)
+                usrname_check = False
 
             # timeout after 3 incorrect input
             if fuckups > 2:
@@ -126,6 +128,8 @@ if __name__ == "__main__":
                 fuckups += 1
                 print(f"Incorrect passwd, try again.You have {3 - fuckups} attempts left")
                 flash_both_led(1)
+                passwd_check = False
+                usrname_check = False
 
             # timeout after 3 incorrect input
             if fuckups > 2:
@@ -145,4 +149,9 @@ if __name__ == "__main__":
         # opens the door. TODO Need to write protective logic around this function
         if usrname_check and passwd_check and match_check:
             open_sesame()
-            break
+            sleep(5)
+            close_sesame()
+            usrname_check = False
+            passwd_check = False
+            match_check = False
+            fuckups = 0
