@@ -11,9 +11,25 @@ Copy this command and paste into terminal. It will change your directory to your
 cd ~
  git clone https://www.github.com/444B/rpidoor.git
  cd rpidoor/
- chmod u+x run.sh
- sudo ./run.sh
+ apt update
+ apt install sqlite3 python3 -y
+ python3 -m venv .venv
 ```
+then run the next commands individually
+``` shell
+source .venv/bin/activate
+```
+
+``` shell
+pip3 install -r requirements.txt
+```
+
+```shell
+nohup python3 door.py
+```
+
+
+
 
 ## Physical layout
 ```
