@@ -12,23 +12,19 @@ cd ~
  git clone https://www.github.com/444B/rpidoor.git
  cd rpidoor/
  apt update
- apt install sqlite3 python3 -y
- python3 -m venv .venv
-```
-then run the next commands individually
-``` shell
+ ```
+ then run the next command individually
+ ``` shell
+ sudo apt install sqlite3 python3 -y
+ ```
+ then run the rest
+  ``` shell
+python3 -m venv .venv
 source .venv/bin/activate
-```
-
-``` shell
 pip3 install -r requirements.txt
-```
-
-```shell
 nohup python3 door.py
 ```
-
-
+TODO - polish these commands
 
 
 ## Physical layout
