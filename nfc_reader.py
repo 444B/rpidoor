@@ -15,7 +15,7 @@ from pn532pi import Pn532Hsu
 
 
 PN532_I2C = Pn532I2c(1)
-nfc = Pn532(PN532_I2C)`
+nfc = Pn532(PN532_I2C)
 
 
 def nfc_setup():
@@ -52,7 +52,7 @@ def nfc_loop():
         print("UID Value: {}".format(binascii.hexlify(uid)))
         # Wait 1 second before continuing
         time.sleep(1)
-        return uid
+        return str(uid)
     else:
         # pn532 probably timed out waiting for a card
         print("Timed out waiting for a card")
