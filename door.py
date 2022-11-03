@@ -1,8 +1,9 @@
 import hashlib
 from time import sleep
 from gpiozero import LED
-from db import db_query, db_query_match, db_insert, db_reset
+from db import *
 from nfc_reader import nfc_setup, nfc_loop
+import os
 
 
 print("\n")
@@ -11,11 +12,6 @@ MAX_ATTEMPTS = 3
 TIMEOUT_SECONDS = 30
 OPEN_SECONDS = 5
 
-
-# hash the username
-def hash_username(cleartext_username):
-    hashed_username = hashlib.sha256(cleartext_username.encode()).hexdigest()
-    return hashed_username
 
 # hash the password
 def hash_password(cleartext_password):
@@ -60,6 +56,20 @@ def change_led(category, action):
         if action == 0:
             password_led.off()
 
+def register_tag(make_admin):
+    print("Please scan your username tag")
+    username = nfc_loop()
+    password = input("Please enter your password: ")
+    hashed_password = hash_password(password)
+    if db_insert(username, hashed_password):
+        print("Registration complete")
+    else:
+        print("Registration insert failed")
+    if make_admin:
+        print("Setting admin status")
+        db_make_admin(username)
+    
+
 
 # main program runs from here
 if __name__ == "__main__":
@@ -87,6 +97,21 @@ if __name__ == "__main__":
             uid = nfc_loop()
             if not uid:
                 continue
+
+            # if the SET_ADMIN environment variable is set or there are no admins,
+            # then the first card scanned will be made an admin
+            if os.environ.get("SET_ADMIN") or not db_check_admin():
+                if register_tag(True):
+                    os.environ["SET_ADMIN"] = ""
+                    continue
+
+            # if we have an admin card, go to the register tag function
+            if db_is_admin(uid):
+                print("Admin card detected")
+                ans = input("Would you like to register a new tag? (y/n): ")
+                if ans == "y":
+                    register_tag(False)
+                    continue
 
             # compare card UID to creds.db
             if db_query(uid, "query_username"):
