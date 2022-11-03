@@ -2,21 +2,21 @@ import hashlib
 from time import sleep
 from gpiozero import LED
 from db import db_query, db_query_match
+from nfc_reader import nfc_setup, nfc_loop
 
 
 print("\n")
 
 
-# get usrname and save as a global string(hashed)
-def get_usrname(cleartext_usrname):
-    global hashed_usrname
+# hash the username
+def hash_username(cleartext_usrname):
     hashed_usrname = hashlib.sha256(cleartext_usrname.encode()).hexdigest()
     return hashed_usrname
 
 
 # get passwd and save as a global string(hashed)
 def get_passwd(cleartext_passwd):
-    global hashed_passwd
+    global hashed_passwo
     hashed_passwd = hashlib.sha256(cleartext_passwd.encode()).hexdigest()
     return hashed_passwd
 
@@ -77,11 +77,17 @@ if __name__ == "__main__":
     change_led(passwd_led, 0)
 
     # running program in a loop
+
+    nfc_setup()
     while True:
 
         # usrname check loop
         while not usrname_check:
-            get_usrname(input("Please enter your usrname\n"))
+            result = nfc_loop()
+            if result:
+                hashed_usrname = hash_username(result)
+            else: 
+                continue
 
             # admin override using magic hash_data
             if hashed_usrname == "7485f7f14090849ddbece011de103c40eadcdc0031885dc29f899f3c5a727428":
