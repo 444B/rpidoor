@@ -108,7 +108,7 @@ if __name__ == "__main__":
             # if we have an admin card, go to the register tag function
             if db_is_admin(uid):
                 print("Admin card detected")
-                register_tag()
+                register_tag(False)
                 continue
 
             # compare card UID to creds.db

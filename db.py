@@ -8,7 +8,7 @@ metadata = db.MetaData()
 members = db.Table('members', metadata,
                    db.Column('usrname_col', db.CHAR(64), primary_key=True),
                    db.Column('passwd_col', db.CHAR(64), nullable=False),
-                   db.Column('is_admin', db.INTEGER(64), default=0),
+                   db.Column('is_admin', db.INTEGER, nullable=False)
                    )
 metadata.create_all(engine)
 
@@ -94,12 +94,8 @@ def db_make_admin(username):
     # Make a user an admin
     query = db.update(members).where(members.columns.usrname_col == username).values(is_admin=True)
     result = conn.execute(query)
-    if result.is_update:
-        print("User is now an admin")
-        return True
-    else:
-        print("No values were updated.")
-        return False
+    print("Admin status set")
+    return True
 
 
 
