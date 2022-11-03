@@ -8,6 +8,7 @@ metadata = db.MetaData()
 members = db.Table('members', metadata,
                    db.Column('usrname_col', db.CHAR(64), primary_key=True),
                    db.Column('passwd_col', db.CHAR(64), nullable=False),
+                   db.Column('is_admin', db.Boolean, default=False),
                    )
 metadata.create_all(engine)
 
@@ -66,6 +67,40 @@ def db_reset():
     conn.execute("DELETE FROM members")
     print("Database reset")
     return
+
+def db_check_admin():
+    # Check if there are any admins in the database
+    output = conn.execute(
+        f"SELECT EXISTS(SELECT 1 FROM members WHERE is_admin = 1 LIMIT 1)"
+    )
+    result = output.fetchall()
+    if result[0][0] == 1:
+        return True
+    else:
+        return False
+
+def db_is_admin(username):
+    # Check if the user is an admin
+    output = conn.execute(
+        f"SELECT EXISTS(SELECT 1 FROM members WHERE usrname_col = ? AND is_admin = 1 LIMIT 1)", (username,)
+    )
+    result = output.fetchall()
+    if result[0][0] == 1:
+        return True
+    else:
+        return False
+
+def db_make_admin(username):
+    # Make a user an admin
+    query = db.update(members).where(members.columns.usrname_col == username).values(is_admin=True)
+    result = conn.execute(query)
+    if result.is_update:
+        print("User is now an admin")
+        return True
+    else:
+        print("No values were updated.")
+        return False
+
 
 
 # if __name__ == '__main__':
