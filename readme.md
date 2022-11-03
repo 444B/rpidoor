@@ -6,29 +6,26 @@ Current work in progress is on main even though it is in testing.
 Once we have a working model, dev will move to a dev branch and this md will be updated to reflect
 
 ## Setup
-Copy this command and paste into terminal. It will change your directory to your home directory, clone the repo, change directory to the repo, give the bash script execution permisson and then run the script. Read the [run.sh](https://github.com/444B/rpidoor/blob/master/run.sh) script for more info. Always read what you run :) 
+Copy this command and paste into terminal. It will change your directory to your home directory, clone the repo, change directory to the repo, install sqlite3 and python3 as super user, then create a virtual python environment and activate it as a regular user, then install the requirements and start the script.
+- note: this does not work perfectly yet
 ``` shell
 cd ~
  git clone https://www.github.com/444B/rpidoor.git
  cd rpidoor/
  apt update
- apt install sqlite3 python3 -y
- python3 -m venv .venv
-```
-then run the next commands individually
-``` shell
+ ```
+ then run the next command individually
+ ``` shell
+ sudo apt install sqlite3 python3 -y
+ ```
+ then run the rest
+  ``` shell
+python3 -m venv .venv
 source .venv/bin/activate
-```
-
-``` shell
 pip3 install -r requirements.txt
-```
-
-```shell
 nohup python3 door.py
 ```
-
-
+TODO - polish these commands
 
 
 ## Physical layout
