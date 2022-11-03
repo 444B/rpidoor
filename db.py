@@ -8,7 +8,7 @@ metadata = db.MetaData()
 members = db.Table('members', metadata,
                    db.Column('usrname_col', db.CHAR(64), primary_key=True),
                    db.Column('passwd_col', db.CHAR(64), nullable=False),
-                   db.Column('is_admin', db.Boolean, default=False),
+                   db.Column('is_admin', db.INTEGER(64), default=0),
                    )
 metadata.create_all(engine)
 
