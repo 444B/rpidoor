@@ -13,22 +13,20 @@ metadata.create_all(engine)
 
 
 # insert new member (still in testing)
-def insert(entered_usrname, entered_passwd):
+def db_insert(entered_usrname, entered_passwd):
     query = db.insert(members).values(usrname_col=entered_usrname, passwd_col=entered_passwd)
     result = conn.execute(query)
     if result.is_insert:
-        print(f'''
-        {entered_usrname} was inserted as the hashed_usrname to the db
-        {entered_passwd} was inserted as the hashed_passwd to the db
-        ''')
+        print("New member added")
+        return True
     else:
         print("No values were inserted.")
-        return
+        return False
 
 
 # category types are queried_usrname, queried_passwd
 def db_query(hash_data, category):
-    if category == "queried_usrname":
+    if category == "query_username":
         output = conn.execute(
             f"SELECT EXISTS(SELECT 1 FROM members WHERE usrname_col = ? LIMIT 1)", (hash_data,)
         )
@@ -38,7 +36,7 @@ def db_query(hash_data, category):
         else:
             return False
 
-    elif category == "queried_passwd":
+    elif category == "query_password":
         output = conn.execute(
             f"SELECT EXISTS(SELECT 1 FROM members WHERE passwd_col = ? LIMIT 1)", (hash_data,)
         )
@@ -52,22 +50,22 @@ def db_query(hash_data, category):
         return False
 
 
-def db_query_match(hash_data_1, hash_data_2, category):
-    if category == "queried_username_password":
-        # Check that the password and the username are from the same user
-        output = conn.execute(
-            f"SELECT EXISTS(SELECT 1 FROM members WHERE passwd_col = ? AND usrname_col = ? LIMIT 1)", (hash_data_1, hash_data_2)
-        )
-        result = output.fetchall()
-        if result[0][0] == 1:
-            return True
-        else:
-            return False
+def db_query_match(hash_data_1, hash_data_2):
+    # Check that the password and the username are from the same user
+    output = conn.execute(
+        f"SELECT EXISTS(SELECT 1 FROM members WHERE usrname_col = ? AND passwd_col = ? LIMIT 1)", (hash_data_1, hash_data_2)
+    )
+    result = output.fetchall()
+    if result[0][0] == 1:
+        return True
     else:
-        print("Malformed Query category error")
         return False
-    
 
+
+def db_reset():
+    conn.execute("DELETE FROM members")
+    print("Database reset")
+    return
 
 
 # if __name__ == '__main__':
