@@ -1,10 +1,3 @@
-"""
-    This example will attempt to connect to an ISO14443A
-    card or tag and retrieve some basic information about it
-    that can be used to determine what type of card it is.   
-   
-    To enable debug message, set DEBUG in nfc/PN532_log.h
-"""
 import time
 import binascii
 

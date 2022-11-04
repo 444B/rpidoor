@@ -6,16 +6,15 @@ conn = engine.connect()
 metadata = db.MetaData()
 # tables setup
 members = db.Table('members', metadata,
-                   db.Column('usrname_col', db.CHAR(64), primary_key=True),
-                   db.Column('passwd_col', db.CHAR(64), nullable=False),
+                   db.Column('hash', db.CHAR(64), primary_key=True),
                    db.Column('is_admin', db.INTEGER, nullable=False)
                    )
 metadata.create_all(engine)
 
 
-# insert new member (still in testing)
-def db_insert(entered_usrname, entered_passwd):
-    query = db.insert(members).values(usrname_col=entered_usrname, passwd_col=entered_passwd)
+def db_insert(entered_hash):
+    # insert new member 
+    query = db.insert(members).values(hash=entered_hash, is_admin=0)
     result = conn.execute(query)
     if result.is_insert:
         print("New member added")
@@ -24,37 +23,10 @@ def db_insert(entered_usrname, entered_passwd):
         print("No values were inserted.")
         return False
 
-
-# category types are queried_usrname, queried_passwd
-def db_query(hash_data, category):
-    if category == "query_username":
-        output = conn.execute(
-            f"SELECT EXISTS(SELECT 1 FROM members WHERE usrname_col = ? LIMIT 1)", (hash_data,)
-        )
-        result = output.fetchall()
-        if result[0][0] == 1:
-            return True
-        else:
-            return False
-
-    elif category == "query_password":
-        output = conn.execute(
-            f"SELECT EXISTS(SELECT 1 FROM members WHERE passwd_col = ? LIMIT 1)", (hash_data,)
-        )
-        result = output.fetchall()
-        if result[0][0] == 1:
-            return True
-        else:
-            return False
-    else:
-        print("Malformed Query category error")
-        return False
-
-
-def db_query_match(hash_data_1, hash_data_2):
-    # Check that the password and the username are from the same user
+def db_query(entered_hash):
+    # check if hash is in database
     output = conn.execute(
-        f"SELECT EXISTS(SELECT 1 FROM members WHERE usrname_col = ? AND passwd_col = ? LIMIT 1)", (hash_data_1, hash_data_2)
+        f"SELECT EXISTS(SELECT 1 FROM members WHERE hash = ? LIMIT 1)", (entered_hash,)
     )
     result = output.fetchall()
     if result[0][0] == 1:
@@ -62,11 +34,12 @@ def db_query_match(hash_data_1, hash_data_2):
     else:
         return False
 
-
 def db_reset():
+    # reset database
     conn.execute("DELETE FROM members")
     print("Database reset")
     return
+
 
 def db_check_admin():
     # Check if there are any admins in the database
@@ -79,10 +52,10 @@ def db_check_admin():
     else:
         return False
 
-def db_is_admin(username):
+def db_is_admin(entered_hash):
     # Check if the user is an admin
     output = conn.execute(
-        f"SELECT EXISTS(SELECT 1 FROM members WHERE usrname_col = ? AND is_admin = 1 LIMIT 1)", (username,)
+        f"SELECT EXISTS(SELECT 1 FROM members WHERE hash = ? AND is_admin = 1 LIMIT 1)", (entered_hash,)
     )
     result = output.fetchall()
     if result[0][0] == 1:
@@ -90,9 +63,9 @@ def db_is_admin(username):
     else:
         return False
 
-def db_make_admin(username):
+def db_make_admin(entered_hash):
     # Make a user an admin
-    query = db.update(members).where(members.columns.usrname_col == username).values(is_admin=True)
+    query = db.update(members).where(members.columns.hash == entered_hash).values(is_admin=True)
     result = conn.execute(query)
     print("Admin status set")
     return True
