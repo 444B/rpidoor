@@ -1,73 +1,62 @@
 import hashlib
 from time import sleep
 from gpiozero import LED
-from db import *
 from nfc_reader import nfc_setup, nfc_loop
 import os
+from display import *
 
+from datastore import UserDB
 
-print("\n")
+# Datastore object
+Datastore = UserDB("ProductionDB.csv")
+
+display("\n")
 
 MAX_ATTEMPTS = 3
 TIMEOUT_SECONDS = 30
 OPEN_SECONDS = 5
 
-
-# hash the password
-def hash_password(cleartext_password):
-    hashed_password = hashlib.sha256(cleartext_password.encode()).hexdigest()
-    return hashed_password
-
-
-# function to open/close the door. in testing, just prints
+# function to open/close the door. in testing, just displays
 def open_door():
-    username_led.on()
-    password_led.on()
-    print("Door has been opened")
-
+    led.on()
+    display("Door has been opened")
 def close_door():
-    print("Door has been closed")
-    username_led.off()
-    password_led.off()
+    display("Door has been closed")
+    led.off()
 
-
-# flashes both LEDs
-def flash_both_led(time):
+# flashes both LEDs for the specified number of seconds
+def lock_out_wait(time: int):
     for num in range(time):
-        print(f"Locked out for {time - num} more seconds")
-        username_led.on()
-        password_led.on()
+        display(f"Locked out for {time - num} more seconds")
+        led.on()
         sleep(0.5)
-        username_led.off()
-        password_led.off()
+        led.off()
         sleep(0.5)
 
+def lock_out():
+    display("Too many bad attempts")
+    sleep(2)
+    display(f"Wait {TIMEOUT_SECONDS} seconds and try again")
+    sleep(2)
+    lock_out_wait(TIMEOUT_SECONDS)
+        
 
-# TODO figure out how to add color to this logic
-def change_led(category, action):
-    if category == username_led:
-        if action == 1:
-            username_led.on()
-        if action == 0:
-            username_led.off()
-    if category == password_led:
-        if action == 1:
-            password_led.on()
-        if action == 0:
-            password_led.off()
 
-def register_tag(make_admin):
-    print("Please scan your username tag")
-    username = nfc_loop()
-    password = input("Please enter your password: ")
-    hashed_password = hash_password(password)
-    if db_insert(username, hashed_password):
-        print("Registration complete")
-    else:
-        print("Registration insert failed")
+def register_tag(make_admin: bool):
+    display("Please scan the new tag")
+    uid: bytes = nfc_loop()
+    while not uid:
+        uid = nfc_loop()
+    display("Please enter the new password")
+    password: int = input("Please enter the new password: ")
+    Datastore.change_user(uid=uid,pincode=password,is_admin=make_admin)
     if make_admin:
-        print("Setting admin status")
-        db_make_admin(username)
+        display("Created Admin user Account")
+    if not make_admin:
+        display("Created regular user Account")
+    sleep(2)
+    return True
+
     
 
 
@@ -77,105 +66,81 @@ if __name__ == "__main__":
     # initial variables setup
     attempts = 0
     hashed_password = ""
-    username_check = False
-    password_check = False
-    match_check = False
-    username_led = LED(12)
-    password_led = LED(5)
-    change_led(username_led, 0)
-    change_led(password_led, 0)
-    
-
-    # running program in a loop
-
+    user_check = False
+    led = LED(12)
+    led.off()
     nfc_setup()
+
     while True:
-
-        # card UID check loop
-        attempts = 0
-        while not username_check:
-            uid = nfc_loop()
-            if not uid:
+        uid = nfc_loop()
+        display("Waiting for card")
+        if not uid:
+            continue
+        display("Card found!")
+        sleep(0.5)
+        
+        # if the SET_ADMIN environment variable is set or there are no admins,
+        # then the first card scanned will be made an admin
+        if os.environ.get("SET_ADMIN") or not Datastore.check_admin():
+            display("No admins found.")
+            sleep(1)
+            display("Setting first card as admin")
+            sleep(2)
+            if register_tag(True):
+                os.environ["SET_ADMIN"] = ""
                 continue
+        
+        # get the password
+        display("Please enter the password")
+        password = input("Please enter your password: ")
 
-            # if the SET_ADMIN environment variable is set or there are no admins,
-            # then the first card scanned will be made an admin
-            if os.environ.get("SET_ADMIN") or not db_check_admin():
-                if register_tag(True):
-                    os.environ["SET_ADMIN"] = ""
-                    continue
-
-            # if we have an admin card, go to the register tag function
-            if db_is_admin(uid):
-                print("Admin card detected")
-                ans = input("Would you like to register a new tag? (y/n): ")
-                if ans == "y":
-                    register_tag(False)
-                    continue
-
-            # compare card UID to creds.db
-            if db_query(uid, "query_username"):
-                change_led(username_led, 1)
-                username_check = True
-                print("Username is correct")
-
-            # incorrect card
-            elif attempts < MAX_ATTEMPTS:
-                attempts += 1
-                print(f"Incorrect card UID, try again.You have {MAX_ATTEMPTS - attempts} attempts left")
-                flash_both_led(1)
-                username_check = False
-
-            # timeout after 3 incorrect cards
+        # if we have an admin card, go to the register tag function
+        if Datastore.is_admin(uid, password):
+            display("Admin card detected")
+            sleep(2)
+            display("Register a new tag?")
+            sleep(2)
+            display("1: Yes, 0: No")
+            ans = input("Would you like to register a new tag? (1/0): ")
+            if ans == "1":
+                register_tag(False)
+                continue
             else:
-                print("Too many incorrect attempts, pls wait {TIMEOUT_SECONDS} seconds and try again")
-                flash_both_led(TIMEOUT_SECONDS)
-                sleep(TIMEOUT_SECONDS)
-                username_check = False
-                attempts = 0
+                display("Exiting admin mode")
+                sleep(2)
+        
+        # check if the hash is in the database
+        display("Checking UID + password")
+        user_check = Datastore.get_user(uid, password)
+        print(user_check)
 
-        # password check loop
-        attempts = 0
-        while not password_check:
-            hashed_password = hash_password(input("Please enter your password: "))
-
-            # compare password to creds in the db
-            if db_query(hashed_password, "query_password"):
-                print("Password is correct")
-                change_led(password_led, 1)
-                password_check = True
-
-            # incorrect input
-            elif attempts < MAX_ATTEMPTS:
-                attempts += 1
-                print(f"Incorrect password, try again.You have {MAX_ATTEMPTS - attempts} attempts left")
-                flash_both_led(1)
-                password_check = False
-
-            # timeout after MAX_ATTEMPTS of incorrect inputs
-            else:
-                print("Too many incorrect attempts, pls wait {TIMEOUT_SECONDS} seconds and try again")
-                flash_both_led(5)
-                attempts = 0
-                username_check = False
-                password_check = False
-
-        # check that username and password match
-        if db_query_match(uid, hashed_password):
-            match_check = True
-        else:
-            print("Username and password do not match. Try again.")
-            password_check = False
-            username_check = False
-            match_check = False
-            attempts = 0
-
-        # opens the door. 
-        if username_check and password_check and match_check:
+        if(user_check):
+            display("User found, welcome back")
             open_door()
             sleep(OPEN_SECONDS)
             close_door()
-            username_check = False
-            password_check = False
-            match_check = False
+            user_check = False
             attempts = 0
+            continue
+
+        elif attempts < MAX_ATTEMPTS:
+            # incorrect input
+            attempts += 1
+            if attempts == MAX_ATTEMPTS:
+                lock_out()
+                attempts = 0
+                continue
+
+            display("Incorrect tag/password.")
+            sleep(1)
+            if(MAX_ATTEMPTS - attempts == 1):
+                display(f"You have {MAX_ATTEMPTS - attempts} attempt left.")
+            else:
+                display(f"You have {MAX_ATTEMPTS - attempts} attempts left.")
+            sleep(1)
+            continue
+        
+        else:
+            lock_out()
+            attempts = 0
+            continue
