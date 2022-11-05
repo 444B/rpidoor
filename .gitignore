@@ -1,2 +1,10 @@
 # ignore python virtual env
 env/
+
+Scripts/
+Lib/
+Include/
+__pycache__/
+.pytest_cache/
+.gitignore
+pyvenv.cfg

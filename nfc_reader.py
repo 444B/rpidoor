@@ -45,7 +45,7 @@ def nfc_loop():
         print("UID Value: {}".format(binascii.hexlify(uid)))
         # Wait 1 second before continuing
         time.sleep(1)
-        return str(uid)
+        return uid
     else:
         # pn532 probably timed out waiting for a card
         print("Timed out waiting for a card")
