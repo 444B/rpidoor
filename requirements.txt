@@ -2,3 +2,4 @@ gpiozero==1.6.2
 sqlalchemy==1.4.42
 pn532pi==1.4
 pytest
+rpi_lcd==0.0.3
