@@ -5,19 +5,19 @@ from db import *
 from nfc_reader import nfc_setup, nfc_loop
 import os
 
+from datastore import UserDB
+
+# 🪵🪵🪵 logs
+logging.basicConfig(filename='prodlog.log', encoding='utf-8', level=logging.DEBUG)
+
+# Datastore object
+Datastore = UserDB("ProductionDB.csv")
 
 print("\n")
 
 MAX_ATTEMPTS = 3
 TIMEOUT_SECONDS = 30
 OPEN_SECONDS = 5
-
-
-# hash the password
-def hash_password(cleartext_password):
-    hashed_password = hashlib.sha256(cleartext_password.encode()).hexdigest()
-    return hashed_password
-
 
 # function to open/close the door. in testing, just prints
 def open_door():
@@ -56,18 +56,15 @@ def change_led(category, action):
         if action == 0:
             password_led.off()
 
-def register_tag(make_admin):
+def register_tag(make_admin: bool):
     print("Please scan your username tag")
-    username = nfc_loop()
-    password = input("Please enter your password: ")
-    hashed_password = hash_password(password)
-    if db_insert(username, hashed_password):
-        print("Registration complete")
-    else:
-        print("Registration insert failed")
+    username: bytes = nfc_loop()
+    password: int = input("Please enter your password: ")
+    Datastore.change_user(uid=username,pincode=password,is_admin=make_admin)
     if make_admin:
-        print("Setting admin status")
-        db_make_admin(username)
+        print("Created Admin user Account")
+    if not make_admin:
+        print("Created regular user Account")
     
 
 
