@@ -1,7 +1,6 @@
 import hashlib
 from time import sleep
 from gpiozero import LED
-from db import *
 from nfc_reader import nfc_setup, nfc_loop
 import os
 
@@ -27,7 +26,7 @@ def close_door():
 
 
 # flashes both LEDs for the specified number of seconds
-def lock_out(time):
+def lock_out(time: int):
     for num in range(time):
         print(f"Locked out for {time - num} more seconds")
         led.on()
@@ -37,11 +36,11 @@ def lock_out(time):
 
 
 def register_tag(make_admin: bool):
-    print("Please scan your tag")
+    print("Please scan the new tag")
     uid: bytes = nfc_loop()
     while not uid:
         uid = nfc_loop()
-    password: int = input("Please enter your password: ")
+    password: int = input("Please enter the new password: ")
     Datastore.change_user(uid=uid,pincode=password,is_admin=make_admin)
     if make_admin:
         print("Created Admin user Account")
@@ -69,7 +68,7 @@ if __name__ == "__main__":
         
         # if the SET_ADMIN environment variable is set or there are no admins,
         # then the first card scanned will be made an admin
-        if os.environ.get("SET_ADMIN") or not db_check_admin():
+        if os.environ.get("SET_ADMIN") or not Datastore.check_admin():
             print("No admins found or SET_ADMIN env variable is set. Setting first card as admin")
             if register_tag(True):
                 os.environ["SET_ADMIN"] = ""
@@ -78,11 +77,8 @@ if __name__ == "__main__":
         # get the password
         password = input("Please enter your password: ")
 
-        # hash the UID + password
-        hashed = hash(uid + password)
-
         # if we have an admin card, go to the register tag function
-        if db_is_admin(hashed):
+        if Datastore.is_admin(uid, password):
             print("Admin card detected")
             ans = input("Would you like to register a new tag? (1/0): ")
             if ans == "1":
@@ -93,7 +89,7 @@ if __name__ == "__main__":
         
         # check if the hash is in the database
         print("Checking if UID + password is in database")
-        user_check = db_query(hashed)
+        user_check = Datastore.get_user(uid, password)
 
         if(user_check):
             print("User found, welcome back")

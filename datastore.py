@@ -35,7 +35,7 @@ class UserDB:
 
     # user lookups are not constant time, susceptible to timing attacks
     # change when cpython gets too fast and starts optimizing too well
-    def get_user(self,uid:bytes,pincode:int) -> bool | tuple[bool,bool] :
+    def get_user(self,uid:bytes,pincode:int):
         """
         Returns False if the user doesnt exist
         Returns tuple of (user_exists, is_admin) otherwise
@@ -46,6 +46,27 @@ class UserDB:
             return False
         elif lookup != None: 
             return True, lookup
+
+    def is_admin(self,uid:bytes,pincode:int) -> bool:
+        """
+        Returns True if user is admin
+        Returns False if user is not admin
+        Returns False if user doesnt exist
+        """
+        logging.info(f"Tried admin lookup for UID:{uid}")
+        lookup = self.dictionary.get(encrypt_user(uid,pincode))
+        if lookup == None:
+            return False
+        elif lookup != None: 
+            return lookup
+
+    def check_admin(self) -> bool:
+        """
+        Returns True if there is at least one admin user
+        Returns False if there are no admin users
+        """
+        logging.info("Checked if there are any admin users")
+        return any(self.dictionary.values())
     
     def delete_user(self,uid:bytes,pincode:int) -> bool:
         """

@@ -8,7 +8,7 @@ logging.basicConfig(filename='testlog.log', encoding='utf-8', level=logging.DEBU
 
 ActiveDatabase = UserDB("testdb.csv")
 
-sessionUID: bytes = urandom(24) #24 random bytes for the test session
+sessionUID: bytes = urandom(7) # 7 random bytes for the test session
 sessionPincode: int = random.randint(100_000,999_999) # 6 digit pseudorandom pincode
 
 def test_authflow():
